@@ -16,19 +16,15 @@ public class RocketTrigger : MonoBehaviour
 
     void OnTriggerEnter(Collider other)
     {
-        if (other.name == "RightHandTriggerCollider" && !DevRocketShipMod.Plugin.blastOff)
+        if (!DevRocketShipMod.Plugin.blastOff)
         {
-            DevRocketShipMod.Plugin.findThisRocket = gameObject.transform.parent.transform.parent.name.ToString();
-            DevRocketShipMod.Plugin.blastOff = true;
-            DevRocketShipMod.Plugin.handUsed = "r";
-            gameObject.transform.parent.gameObject.SetActive(false); // no spam
-        }
-        else if (other.name == "LeftHandTriggerCollider" && !DevRocketShipMod.Plugin.blastOff)
-        {
-            DevRocketShipMod.Plugin.findThisRocket = gameObject.transform.parent.transform.parent.name.ToString();
-            DevRocketShipMod.Plugin.blastOff = true;
-            DevRocketShipMod.Plugin.handUsed = "l";
-            gameObject.transform.parent.gameObject.SetActive(false); // no spam (again)
+            if (other.name == "RightHandTriggerCollider" || other.name == "LeftHandTriggerCollider")
+            {
+                DevRocketShipMod.Plugin.findThisRocket = gameObject.transform.parent.transform.parent.name.ToString();
+                DevRocketShipMod.Plugin.findThisRocket = gameObject.transform.parent.transform.parent.name.ToString();
+                DevRocketShipMod.Plugin.blastOff = true;
+                gameObject.transform.parent.gameObject.SetActive(false); // no spam
+            }
         }
     }
 

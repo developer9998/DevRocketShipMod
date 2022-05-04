@@ -3,6 +3,7 @@ using System.IO;
 using System.Reflection;
 using BepInEx;
 using UnityEngine.XR;
+using UnityEngine.UI;
 using UnityEngine;
 using Utilla;
 using System.ComponentModel;
@@ -10,6 +11,7 @@ using System.ComponentModel;
 namespace DevRocketShipMod
 {
     //[Description("HauntedModMenu")] removed due to bugs
+    [Description("HauntedModMenu")]
     [BepInPlugin(PluginInfo.GUID, PluginInfo.Name, PluginInfo.Version)]
     [BepInDependency("org.legoandmars.gorillatag.utilla", "1.5.0")]
     [ModdedGamemode]
@@ -20,8 +22,8 @@ namespace DevRocketShipMod
         //Do not use in any other mod (Reusing code, models, sounds, etc. Or using in mod menus.)
 
         /*Important stuff*/
-        bool inRoom; // if the player is in a modded lobby
-        bool modEnabled; // if the mod is enabled (added this last minute)
+        static bool modActive = false; // is the mod active
+        static bool inModdedLobby = false; // if the player is in a modded lobby
 
         /*Required GameObjects*/
         static GameObject RocketShip; // the rocket loaded from the bundle
@@ -43,7 +45,6 @@ namespace DevRocketShipMod
 
         /*Activation*/
         public static bool blastOff = false; // ready to blast off or not
-        public static string handUsed; // if the left or right hand touched the rocket
         public static bool foundOutIfBlast = false; // if the rocket is blasting
 
         /*Tracking*/
@@ -53,13 +54,35 @@ namespace DevRocketShipMod
         void OnEnable()
         {
             Utilla.Events.GameInitialized += OnGameInitialized;
-            modEnabled = true;
+            if (inModdedLobby)
+            {
+                if (currentRocket == -1)
+                {
+                    modActive = this.enabled;
+                    RocketFolder.gameObject.SetActive(true);
+                }
+                else
+                if (!foundOutIfBlast)
+                {
+                    modActive = this.enabled;
+                    RocketFolder.gameObject.SetActive(true);
+                }
+            }
         }
 
         void OnDisable()
         {
             Utilla.Events.GameInitialized -= OnGameInitialized;
-            modEnabled = false;
+            modActive = this.enabled;
+            if (currentRocket == -1)
+            {
+                RocketFolder.gameObject.SetActive(false);
+            }
+            else
+            if (!foundOutIfBlast)
+            {
+                RocketFolder.gameObject.SetActive(false);
+            }
         }
 
         void OnGameInitialized(object sender, EventArgs e)
@@ -76,10 +99,13 @@ namespace DevRocketShipMod
             RealRocket.transform.localScale = new Vector3(0.4524f, 0.4524f, 0.4524f);
             RealRocket.transform.GetChild(1).gameObject.SetActive(false);
             GameObject.Find("Ship(Clone)").transform.GetChild(0).gameObject.layer = 18;
+
         }
 
         void Update()
         {
+
+            
             if (RocketCooldown == 0)
             {
                 if (!RocketCooldownDocumented)
@@ -110,7 +136,7 @@ namespace DevRocketShipMod
             InputDevices.GetDeviceAtXRNode(XRNode.RightHand).TryGetFeatureValue(CommonUsages.primaryButton, out primaryButtonDown);
             InputDevices.GetDeviceAtXRNode(XRNode.RightHand).TryGetFeatureValue(CommonUsages.secondaryButton, out secondaryButtonDown);
 
-            if (primaryButtonDown && !editModeToggle && inRoom && modEnabled)
+            if (primaryButtonDown && !editModeToggle && modActive)
             {
                 editModeToggle = true;
                 editMode = !editMode;
@@ -120,7 +146,7 @@ namespace DevRocketShipMod
                 editModeToggle = false;
             }
 
-            if (!inRoom)
+            if (!modActive)
             {
                 editModeToggle = true;
                 editMode = false;
@@ -167,54 +193,7 @@ namespace DevRocketShipMod
                 currentRocket = -1;
             }
 
-            if (!modEnabled)
-            {
-                editModeToggle = true;
-                editMode = false;
-                if (GameObject.Find("DevRocketShipMod/CoolUniqueRocket0"))
-                {
-                    GameObject.Destroy(GameObject.Find("DevRocketShipMod/CoolUniqueRocket0"));
-                }
-                if (GameObject.Find("DevRocketShipMod/CoolUniqueRocket0"))
-                {
-                    GameObject.Destroy(GameObject.Find("DevRocketShipMod/CoolUniqueRocket0"));
-                }
-                if (GameObject.Find("DevRocketShipMod/CoolUniqueRocket1"))
-                {
-                    GameObject.Destroy(GameObject.Find("DevRocketShipMod/CoolUniqueRocket1"));
-                }
-                if (GameObject.Find("DevRocketShipMod/CoolUniqueRocket1"))
-                {
-                    GameObject.Destroy(GameObject.Find("DevRocketShipMod/CoolUniqueRocket1"));
-                }
-                if (GameObject.Find("DevRocketShipMod/CoolUniqueRocket2"))
-                {
-                    GameObject.Destroy(GameObject.Find("DevRocketShipMod/CoolUniqueRocket2"));
-                }
-                if (GameObject.Find("DevRocketShipMod/CoolUniqueRocket2"))
-                {
-                    GameObject.Destroy(GameObject.Find("DevRocketShipMod/CoolUniqueRocket2"));
-                }
-                if (GameObject.Find("DevRocketShipMod/CoolUniqueRocket3"))
-                {
-                    GameObject.Destroy(GameObject.Find("DevRocketShipMod/CoolUniqueRocket3"));
-                }
-                if (GameObject.Find("DevRocketShipMod/CoolUniqueRocket3"))
-                {
-                    GameObject.Destroy(GameObject.Find("DevRocketShipMod/CoolUniqueRocket3"));
-                }
-                if (GameObject.Find("DevRocketShipMod/CoolUniqueRocket4"))
-                {
-                    GameObject.Destroy(GameObject.Find("DevRocketShipMod/CoolUniqueRocket4"));
-                }
-                if (GameObject.Find("DevRocketShipMod/CoolUniqueRocket4"))
-                {
-                    GameObject.Destroy(GameObject.Find("DevRocketShipMod/CoolUniqueRocket4"));
-                }
-                currentRocket = -1;
-            }
-
-            if (secondaryButtonDown && inRoom && !editMode && modEnabled)
+            if (secondaryButtonDown && modActive && !editMode)
             {
                 if (GameObject.Find("DevRocketShipMod/CoolUniqueRocket0"))
                 {
@@ -371,50 +350,24 @@ namespace DevRocketShipMod
 
             if (blastOff)
             {
-                if (handUsed == "r")
+                if (!foundOutIfBlast)
                 {
-                    if (!foundOutIfBlast)
+                    foundOutIfBlast = true;
+                    GameObject ThisUsedRocket = GameObject.Find(findThisRocket.ToString());
+                    if (ThisUsedRocket == null) { }
+                    else
                     {
-                        foundOutIfBlast = !foundOutIfBlast;
-                        GameObject ThisUsedRocket = GameObject.Find(findThisRocket.ToString());
-                        if (ThisUsedRocket == null) { } else
-                        {
-                            GameObject.Find("Player/GorillaPlayer/TurnParent/LeftHand Controller/").SetActive(true);
-                            ThisUsedRocket.gameObject.AddComponent<Rigidbody>();
-                            Rigidbody RocketRigidbody = ThisUsedRocket.gameObject.GetComponent<Rigidbody>();
-                            RocketRigidbody.constraints = RigidbodyConstraints.FreezeRotation;
-                            RocketRigidbody.AddForce(new Vector3(0f, 3500f, 0f), ForceMode.Acceleration);
-                            ThisUsedRocket.transform.GetChild(0).gameObject.transform.GetChild(0).gameObject.SetActive(true);
-                            GorillaLocomotion.Player.Instance.GetComponent<Rigidbody>().AddForce(new Vector3(0f, 3500f, 0f), ForceMode.Acceleration);
-                            Rigidbody PlayerRigidbody = GorillaLocomotion.Player.Instance.GetComponent<Rigidbody>();
-                            PlayerRigidbody.velocity = new Vector3(0f, PlayerRigidbody.velocity.y, 0f);
-                            RocketCooldown = 60;
-                            RocketCooldownDocumented = false;
-                        }
-                    }
-                }
-
-                if (handUsed == "l")
-                {
-                    if (!foundOutIfBlast)
-                    {
-                        foundOutIfBlast = !foundOutIfBlast;
-                        GameObject ThisUsedRocket = GameObject.Find(findThisRocket.ToString());
-                        if (ThisUsedRocket == null) { }
-                        else
-                        {
-                            GameObject.Find("Player/GorillaPlayer/TurnParent/RightHand Controller/").SetActive(true);
-                            ThisUsedRocket.gameObject.AddComponent<Rigidbody>();
-                            Rigidbody RocketRigidbody = ThisUsedRocket.gameObject.GetComponent<Rigidbody>();
-                            RocketRigidbody.constraints = RigidbodyConstraints.FreezeRotation;
-                            RocketRigidbody.AddForce(new Vector3(0f, 3500f, 0f), ForceMode.Acceleration);
-                            ThisUsedRocket.transform.GetChild(0).gameObject.transform.GetChild(0).gameObject.SetActive(true);
-                            GorillaLocomotion.Player.Instance.GetComponent<Rigidbody>().AddForce(new Vector3(0f, 3500f, 0f), ForceMode.Acceleration);
-                            Rigidbody PlayerRigidbody = GorillaLocomotion.Player.Instance.GetComponent<Rigidbody>();
-                            PlayerRigidbody.velocity = new Vector3(0f, PlayerRigidbody.velocity.y, 0f);
-                            RocketCooldown = 60;
-                            RocketCooldownDocumented = false;
-                        }
+                        GameObject.Find("Player/GorillaPlayer/TurnParent/LeftHand Controller/").SetActive(true);
+                        ThisUsedRocket.gameObject.AddComponent<Rigidbody>();
+                        Rigidbody RocketRigidbody = ThisUsedRocket.gameObject.GetComponent<Rigidbody>();
+                        RocketRigidbody.constraints = RigidbodyConstraints.FreezeRotation;
+                        RocketRigidbody.AddForce(new Vector3(0f, 3500f, 0f), ForceMode.Acceleration);
+                        ThisUsedRocket.transform.GetChild(0).gameObject.transform.GetChild(0).gameObject.SetActive(true);
+                        GorillaLocomotion.Player.Instance.GetComponent<Rigidbody>().AddForce(new Vector3(0f, 3500f, 0f), ForceMode.Acceleration);
+                        Rigidbody PlayerRigidbody = GorillaLocomotion.Player.Instance.GetComponent<Rigidbody>();
+                        PlayerRigidbody.velocity = new Vector3(0f, PlayerRigidbody.velocity.y, 0f);
+                        RocketCooldown = 185;
+                        RocketCooldownDocumented = false;
                     }
                 }
             }
@@ -426,13 +379,15 @@ namespace DevRocketShipMod
         [ModdedGamemodeJoin]
         public void OnJoin(string gamemode)
         {
-            inRoom = true;
+            inModdedLobby = true;
+            modActive = this.enabled;
         }
 
         [ModdedGamemodeLeave]
         public void OnLeave(string gamemode)
         {
-            inRoom = false;
+            inModdedLobby = false;
+            modActive = false;
         }
     }
 } // https://www.youtube.com/watch?v=uMszu_VgMfY&ab_channel=AgtfCZ

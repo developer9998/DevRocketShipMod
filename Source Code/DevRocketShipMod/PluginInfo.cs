@@ -8,6 +8,6 @@ namespace DevRocketShipMod
     {
         public const string GUID = "com.dev9998.gorillatag.devrocketshipmod";
         public const string Name = "DevRocketShipMod";
-        public const string Version = "1.0.0";
+        public const string Version = "1.0.1";
     }
 }
